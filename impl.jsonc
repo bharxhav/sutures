@@ -1,14 +1,18 @@
 // impl.jsonc: Bidirectional DSL case explosion
 //
-// Structure: [ [{json_data}, {dsl}], ... ]
-//   Position 0: raw JSON data (source) trying to match
-//   Position 1: DSL that maps JSON paths to type fields
+// Structure: [ [{json_data}, {dsl}, ...{alt_dsl}], ... ]
+//   Position 0: raw JSON data (source)
+//   Position 1+: DSL solutions (multiple allowed — different forms, same mapping)
+//
+// Flow directions:
+//   read:  / -> .   (JSON data into TS/RS types — default direction)
+//   write: . -> /   (types/literals into JSON output — reverse direction)
 //
 // Conventions:
 //   "/": navigates JSON data   (e.g. /user/name)
 //   ".": navigates TS/RS types (e.g. User.name)
-//   "_": no source terminal (stop looking in JSON)
-//   "=": inject a literal constant (native JSON value)
+//   "_": reverse-flow injection (write). List of { target: value } mappings.
+//        Only construct allowed to reverse direction. Allowed at any depth.
 
 [
   // ═══════════════════════════════════════════════════════════════════
@@ -34,5 +38,191 @@
   [{}, { "/deleted_at": "Record.deleted_at" }],
 
   // 1.5.3 Capture a nonexistant terminal as a constant
-  [{}, { "_": "response/cache_response", "=": true }],
+  [{}, { "_": [{ "/response/cache_response": true }] }],
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 2. OBJECT — flat and nested
+  // ═══════════════════════════════════════════════════════════════════
+
+  // 2.1 Capture /user/first, /user/last into Name.first, Name.last
+  [
+    { "user": { "first": "Alice", "last": "Smith" } },
+    {
+      "/user": {
+        "/first": "Name.first",
+        "/last": "Name.last",
+      },
+    },
+    {
+      "/user/first": "Name.first",
+      "/user/last": "Name.last",
+    },
+  ],
+
+  // 2.2 Capture /point/x, /point/y into Vec2.x, Vec2.y
+  [
+    { "point": { "x": 1, "y": 2 } },
+    // nested read
+    {
+      "/point": {
+        "/x": "Vec2.x",
+        "/y": "Vec2.y",
+      },
+    },
+    // flat read
+    {
+      "/point/x": "Vec2.x",
+      "/point/y": "Vec2.y",
+    },
+  ],
+
+  // 2.3 Capture /flags/* into Perms.admin, Perms.verified
+  [
+    { "flags": { "admin": true, "verified": false } },
+    // nested read
+    {
+      "/flags": {
+        "/admin": "Perms.admin",
+        "/verified": "Perms.verified",
+      },
+    },
+    // flat read
+    {
+      "/flags/admin": "Perms.admin",
+      "/flags/verified": "Perms.verified",
+    },
+  ],
+
+  // 2.4 Capture /user/* into Profile.name, Profile.age, Profile.active, Profile.bio
+  [
+    { "user": { "name": "Alice", "age": 30, "active": true, "bio": null } },
+    // nested read
+    {
+      "/user": {
+        "/name": "Profile.name",
+        "/age": "Profile.age",
+        "/active": "Profile.active",
+        "/bio": "Profile.bio",
+      },
+    },
+    // flat read
+    {
+      "/user/name": "Profile.name",
+      "/user/age": "Profile.age",
+      "/user/active": "Profile.active",
+      "/user/bio": "Profile.bio",
+    },
+  ],
+
+  // 2.5 Capture /a/b/c into Deep.value  (3 levels deep)
+  [
+    { "a": { "b": { "c": "deep" } } },
+    // nested read (mirrors JSON shape)
+    {
+      "/a": {
+        "/b": {
+          "/c": "Deep.value",
+        },
+      },
+    },
+    // flat read (path collapses nesting)
+    {
+      "/a/b/c": "Deep.value",
+    },
+    // mixed: partial nesting
+    {
+      "/a": {
+        "/b/c": "Deep.value",
+      },
+    },
+  ],
+
+  // 2.6 Capture /config/db/* into DbConfig, /config/cache/* into CacheConfig
+  //     (two sibling sub-objects -> two different target types)
+  [
+    {
+      "config": {
+        "db": { "host": "localhost", "port": 5432 },
+        "cache": { "enabled": true },
+      },
+    },
+    // nested read
+    {
+      "/config": {
+        "/db": {
+          "/host": "DbConfig.host",
+          "/port": "DbConfig.port",
+        },
+        "/cache": {
+          "/enabled": "CacheConfig.enabled",
+        },
+      },
+    },
+    // flat read
+    {
+      "/config/db/host": "DbConfig.host",
+      "/config/db/port": "DbConfig.port",
+      "/config/cache/enabled": "CacheConfig.enabled",
+    },
+    // mixed: group by target type
+    {
+      "/config/db": {
+        "/host": "DbConfig.host",
+        "/port": "DbConfig.port",
+      },
+      "/config/cache/enabled": "CacheConfig.enabled",
+    },
+  ],
+
+  // 2.7 Capture /user/name + inject constant "v2" into User.api_version
+  //     (read + write in same DSL block)
+  [
+    { "user": { "name": "Alice" } },
+    // flat read + _ write
+    {
+      "/user/name": "User.name",
+      "_": [{ "User.api_version": "v2" }],
+    },
+    // nested read + _ write
+    {
+      "/user": {
+        "/name": "User.name",
+      },
+      "_": [{ "User.api_version": "v2" }],
+    },
+  ],
+
+  // 2.8 Source has extra fields DSL doesn't mention — ignore /user/email, capture only /user/name
+  //     (partial capture — DSL is a whitelist, unmentioned fields are dropped)
+  [
+    { "user": { "name": "Alice", "email": "a@b.com", "phone": "555" } },
+    // nested read — only /name is captured
+    {
+      "/user": {
+        "/name": "Profile.name",
+      },
+    },
+    // flat read
+    {
+      "/user/name": "Profile.name",
+    },
+  ],
+
+  // 2.9 DSL expects /user/role but source is missing it — default via _ write
+  //     (read what exists + write what's missing)
+  [
+    { "user": { "name": "Alice" } },
+    // flat read + _ write for missing field
+    {
+      "/user/name": "User.name",
+      "_": [{ "User.role": "guest" }],
+    },
+    // nested read + _ write
+    {
+      "/user": {
+        "/name": "User.name",
+      },
+      "_": [{ "User.role": "guest" }],
+    },
+  ],
 ]
