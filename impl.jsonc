@@ -13,6 +13,11 @@
 //   ".": navigates TS/RS types (e.g. User.name)
 //   "_": reverse-flow injection (write). List of { target: value } mappings.
 //        Only construct allowed to reverse direction. Allowed at any depth.
+//
+// Shorthand:
+//   "/path": "Struct" — capture all matching keys from /path into Struct fields by name.
+//        Struct definition is the whitelist (2.8 semantics). Only keys that exist
+//        on both the JSON source AND the struct are captured.
 
 [
   // ═══════════════════════════════════════════════════════════════════
@@ -60,8 +65,13 @@
   ],
 
   // 2.2 Capture /point/x, /point/y into Vec2.x, Vec2.y
+  //     (keys x,y match Vec2 fields exactly)
   [
     { "point": { "x": 1, "y": 2 } },
+    // struct shorthand — keys match fields
+    {
+      "/point": "Vec2",
+    },
     // nested read
     {
       "/point": {
@@ -77,8 +87,13 @@
   ],
 
   // 2.3 Capture /flags/* into Perms.admin, Perms.verified
+  //     (keys admin,verified match Perms fields exactly)
   [
     { "flags": { "admin": true, "verified": false } },
+    // struct shorthand
+    {
+      "/flags": "Perms",
+    },
     // nested read
     {
       "/flags": {
@@ -94,8 +109,13 @@
   ],
 
   // 2.4 Capture /user/* into Profile.name, Profile.age, Profile.active, Profile.bio
+  //     (keys name,age,active,bio match Profile fields exactly)
   [
     { "user": { "name": "Alice", "age": 30, "active": true, "bio": null } },
+    // struct shorthand
+    {
+      "/user": "Profile",
+    },
     // nested read
     {
       "/user": {
@@ -139,12 +159,25 @@
 
   // 2.6 Capture /config/db/* into DbConfig, /config/cache/* into CacheConfig
   //     (two sibling sub-objects -> two different target types)
+  //     (db keys host,port match DbConfig; cache key enabled matches CacheConfig)
   [
     {
       "config": {
         "db": { "host": "localhost", "port": 5432 },
         "cache": { "enabled": true },
       },
+    },
+    // struct shorthand — both sub-objects
+    {
+      "/config": {
+        "/db": "DbConfig",
+        "/cache": "CacheConfig",
+      },
+    },
+    // struct shorthand flat
+    {
+      "/config/db": "DbConfig",
+      "/config/cache": "CacheConfig",
     },
     // nested read
     {
@@ -178,6 +211,11 @@
   //     (read + write in same DSL block)
   [
     { "user": { "name": "Alice" } },
+    // struct shorthand + _ write
+    {
+      "/user": "User",
+      "_": [{ "User.api_version": "v2" }],
+    },
     // flat read + _ write
     {
       "/user/name": "User.name",
@@ -194,9 +232,14 @@
 
   // 2.8 Source has extra fields DSL doesn't mention — ignore /user/email, capture only /user/name
   //     (partial capture — DSL is a whitelist, unmentioned fields are dropped)
+  //     (struct shorthand: Profile only has .name, so email+phone are ignored)
   [
     { "user": { "name": "Alice", "email": "a@b.com", "phone": "555" } },
-    // nested read — only /name is captured
+    // struct shorthand — Profile only defines .name, so only name is captured
+    {
+      "/user": "Profile",
+    },
+    // nested read — explicit whitelist
     {
       "/user": {
         "/name": "Profile.name",
@@ -212,7 +255,12 @@
   //     (read what exists + write what's missing)
   [
     { "user": { "name": "Alice" } },
-    // flat read + _ write for missing field
+    // struct shorthand + _ write for missing field
+    {
+      "/user": "User",
+      "_": [{ "User.role": "guest" }],
+    },
+    // flat read + _ write
     {
       "/user/name": "User.name",
       "_": [{ "User.role": "guest" }],
