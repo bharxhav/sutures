@@ -5,6 +5,7 @@
 # bun
 node_modules
 bun.lock
+dist
 
 # rust
 target
