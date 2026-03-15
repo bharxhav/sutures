@@ -1,0 +1,21 @@
+inheritedBy:
+  language: "typescript"
+
+tasks:
+  check:
+    command: "bun x tsc --noEmit"
+    inputs:
+      - "src/**/*"
+      - "tsconfig.json"
+  lint:
+    command: "bun x tsc --noEmit --pretty"
+    inputs:
+      - "src/**/*"
+      - "tsconfig.json"
+  build:
+    command: "bun build src/index.ts --outdir dist"
+    inputs:
+      - "src/**/*"
+      - "tsconfig.json"
+    outputs:
+      - "dist/"

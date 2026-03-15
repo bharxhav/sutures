@@ -1,4 +1,14 @@
-
 # moon
 .moon/cache
 .moon/docker
+
+# bun
+node_modules
+bun.lock
+
+# rust
+target
+Cargo.lock
+
+# misc
+.DS_Store

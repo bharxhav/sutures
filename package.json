@@ -1,0 +1,5 @@
+{
+  "name": "sutures",
+  "private": true,
+  "workspaces": ["libs/*", "apps/*"]
+}

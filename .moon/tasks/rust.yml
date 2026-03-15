@@ -1,0 +1,25 @@
+inheritedBy:
+  language: "rust"
+
+tasks:
+  check:
+    command: "cargo check "
+    inputs:
+      - "src/**/*"
+      - "Cargo.toml"
+    env:
+      CARGO_TERM_COLOR: "always"
+  lint:
+    command: "cargo clippy "
+    inputs:
+      - "src/**/*"
+      - "Cargo.toml"
+    env:
+      CARGO_TERM_COLOR: "always"
+  build:
+    command: "cargo build "
+    inputs:
+      - "src/**/*"
+      - "Cargo.toml"
+    env:
+      CARGO_TERM_COLOR: "always"
