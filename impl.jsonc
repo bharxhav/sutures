@@ -273,4 +273,85 @@
       "_": [{ "User.role": "guest" }],
     },
   ],
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 3. ARRAY — homogeneous
+  // ═══════════════════════════════════════════════════════════════════
+
+  // 3.1 Capture /tags[:] into TagList.items : string[]
+  [
+    { "tags": ["alpha", "beta", "gamma"] },
+    {
+      "/tags": "TagList.items", // We don't need to iterate, simple copy
+    },
+  ],
+
+  // 3.2 Capture /scores into ScoreBoard.values : int[]
+  [{ "scores": [10, 20, 30] }, { "/scores": "ScoreBoard.values" }],
+
+  // 3.3 Capture /bits into BitField.flags : bool[]
+  [{ "bits": [true, false, true] }, { "/bits": "BitField.flags" }],
+
+  // 3.4 Capture /users[:]/name into UserList.names : string[]
+  //     (array of objects, pluck one field)
+  [
+    { "users": [{ "name": "Alice" }, { "name": "Bob" }] },
+    {
+      "/users[:]/name": "UserList.names",
+    },
+  ],
+
+  // 3.5 Capture /users into Response.users : User[]
+  //     (array of objects -> array of structs, type system knows User[])
+  [
+    {
+      "users": [
+        { "name": "Alice", "age": 30 },
+        { "name": "Bob", "age": 25 },
+      ],
+    },
+    // simple — same as any field capture, type system handles the rest
+    { "/users": "Response.users" },
+  ],
+
+  // 3.6 Capture /users into Response.users : User[]
+  //     + write "active" as User.status on every element
+  //     (_ write enriches each element — constant per-element injection)
+  [
+    {
+      "users": [{ "name": "Alice" }, { "name": "Bob" }],
+    },
+    {
+      "/users": "Response.users",
+      "_": [{ "Response.users[:].status": "active" }],
+    },
+  ],
+
+  // 3.6.1 Main direction is write (. -> /), inject const still applies
+  //       Response.users -> /users, but also inject "active" on each element
+  [
+    {
+      "users": [{ "name": "Alice" }, { "name": "Bob" }],
+    },
+    {
+      "Response.users": "/users",
+      "_": [{ "/users[:]/status": "active" }],
+    },
+  ],
+
+  // 3.7 Capture /matrix into Grid.cells : int[][]
+  //     (nested arrays — same rule, type system knows int[][])
+  [
+    {
+      "matrix": [
+        [1, 2],
+        [3, 4],
+      ],
+    },
+    { "/matrix": "Grid.cells" },
+  ],
+
+  // 3.8 Empty source array — Capture /tags when tags is []
+  //     (same DSL, type system produces empty typed array)
+  [{ "tags": [] }, { "/tags": "TagList.items" }],
 ]
