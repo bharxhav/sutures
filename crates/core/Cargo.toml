@@ -3,4 +3,9 @@ name = "sutures"
 version = "0.0.1"
 edition = "2024"
 
+[features]
+default = ["derive"]
+derive = ["dep:sutures-derive"]
+
 [dependencies]
+sutures-derive = { workspace = true, optional = true }
