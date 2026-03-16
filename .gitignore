@@ -11,5 +11,8 @@ dist
 target
 Cargo.lock
 
+# reference repos
+.reference
+
 # misc
 .DS_Store
