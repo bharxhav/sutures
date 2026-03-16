@@ -1,0 +1,144 @@
+name: Release Schema
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "schema/**"
+  workflow_dispatch:
+
+concurrency:
+  group: release-schema-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_R2_TOKEN_SK }}
+  R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_SCHEMA_BUCKET_NAME }}
+
+jobs:
+  validate:
+    name: Validate Schemas
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: schema
+
+      - name: Validate schemas
+        run: bun run validate.ts
+        working-directory: schema
+
+      - name: Detect version changes
+        id: changed
+        run: |
+          set -euo pipefail
+
+          CHANGED=""
+
+          for f in schema/v*.json; do
+            [ -f "$f" ] || continue
+            key="$(basename "$f")"
+
+            CURRENT=$(jq -r '.version // empty' "$f")
+            if [ -z "$CURRENT" ]; then
+              echo "::warning::$key has no version field — skipping"
+              continue
+            fi
+
+            # Compare against what's currently deployed
+            DEPLOYED=$(curl -sf "https://schema.sutures.dev/$key" | jq -r '.version // empty' 2>/dev/null || echo "")
+
+            if [ -z "$DEPLOYED" ]; then
+              echo "$key: not yet deployed — will upload ($CURRENT)"
+              CHANGED="${CHANGED:+$CHANGED }$f"
+            elif [ "$CURRENT" = "$DEPLOYED" ]; then
+              echo "$key: unchanged ($CURRENT)"
+            else
+              # semver compare: deployed must not be ahead of local
+              LOWER=$(printf '%s\n%s\n' "$DEPLOYED" "$CURRENT" | sort -V | head -n1)
+              if [ "$LOWER" != "$DEPLOYED" ]; then
+                echo "::error::$key: deployed version ($DEPLOYED) is ahead of local ($CURRENT) — refusing to downgrade"
+                exit 1
+              fi
+              echo "$key: $DEPLOYED -> $CURRENT"
+              CHANGED="${CHANGED:+$CHANGED }$f"
+            fi
+          done
+
+          if [ -z "$CHANGED" ]; then
+            echo "No schema version changes detected"
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=true" >> "$GITHUB_OUTPUT"
+            echo "files<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$CHANGED" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+    outputs:
+      any: ${{ steps.changed.outputs.any }}
+      files: ${{ steps.changed.outputs.files }}
+
+  upload:
+    name: Upload to R2
+    needs: validate
+    if: needs.validate.outputs.any == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: "3"
+          command: version
+
+      - name: Upload changed schemas to R2
+        run: |
+          set -euo pipefail
+
+          UPLOAD_COUNT=0
+
+          # On workflow_dispatch, upload all schemas; otherwise only changed ones
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            FILES=$(ls schema/v*.json 2>/dev/null)
+          else
+            FILES="${{ needs.validate.outputs.files }}"
+          fi
+
+          for filepath in $FILES; do
+            [ -z "$filepath" ] && continue
+            key="$(basename "$filepath")"
+            version=$(jq -r '.version' "$filepath")
+
+            echo "Uploading $key (v$version) -> ${{ env.R2_BUCKET }}/$key"
+
+            wrangler r2 object put "${{ env.R2_BUCKET }}/$key" \
+              --file "$filepath" \
+              --content-type "application/json" \
+              --cache-control "public, max-age=300" \
+              --remote
+
+            UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
+          done
+
+          if [ "$UPLOAD_COUNT" -eq 0 ]; then
+            echo "::error::No files uploaded"
+            exit 1
+          fi
+
+          echo "Uploaded $UPLOAD_COUNT schema(s) to R2"
