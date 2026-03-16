@@ -101,10 +101,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Setup wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           wranglerVersion: "3"
+          packageManager: bun
           command: version
 
       - name: Upload changed schemas to R2
