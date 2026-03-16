@@ -104,12 +104,8 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Setup wrangler
-        uses: cloudflare/wrangler-action@v3
-        with:
-          wranglerVersion: "3"
-          packageManager: bun
-          command: version
+      - name: Install wrangler
+        run: bun install -g wrangler@3
 
       - name: Upload changed schemas to R2
         run: |
@@ -131,7 +127,7 @@ jobs:
 
             echo "Uploading $key (v$version) -> ${{ env.R2_BUCKET }}/$key"
 
-            wrangler r2 object put "${{ env.R2_BUCKET }}/$key" \
+            bunx wrangler r2 object put "${{ env.R2_BUCKET }}/$key" \
               --file "$filepath" \
               --content-type "application/json" \
               --cache-control "public, max-age=300" \
