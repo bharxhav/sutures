@@ -1,0 +1,8 @@
+id: "schema"
+
+tasks:
+  check:
+    command: "bun run validate.ts"
+    inputs:
+      - "v*.json"
+      - "validate.ts"
