@@ -1,123 +1,66 @@
 # Sutures
 
-Monorepo managed by [moon](https://moonrepo.dev). Collection of TS and Rust libraries, plus a dev app for an interactive parser (TS).
+Rust + TypeScript monorepo for composable data-pipeline libraries. Managed by **moon** — all builds, checks, and lints go through moon, not raw `cargo` or `bun` commands.
 
-## Structure
+## Project Map
 
-- `libs/` — TypeScript libraries (bun workspaces)
-- `crates/` — Rust libraries (cargo workspace)
-- `apps/` — Dev applications (TS, e.g. interactive parser playground)
+| ID           | Path               | Language   | Description                                  |
+| ------------ | ------------------ | ---------- | -------------------------------------------- |
+| `rs`         | `crates/core/`     | Rust       | Core library (`sutures` crate, edition 2024) |
+| `rs-derive`  | `crates/derive/`   | Rust       | Proc-macro crate (`sutures-derive`)          |
+| `ts`         | `libs/core/`       | TypeScript | Core TS library (ESM, bun)                   |
+| `visualizer` | `apps/visualizer/` | TypeScript | Interactive parser playground                |
+| `schema`     | `schema/`          | Custom     | JSON schema validation (ajv)                 |
 
-## Tooling
+## Commands — Use These
 
-- **moon** for task orchestration and project graph
-- **bun** as JS runtime + package manager
-- **cargo** for Rust builds
+Always validate work through moon. Never run bare `cargo check`, `cargo build`, `cargo clippy`, `bun build`, or `bun x tsc` directly.
 
-Run tasks: `moon run <project>:<task>` or `moon check --all`
+```sh
+# Check a single project
+moon run rs:check          # cargo check on crates/core
+moon run rs:lint           # cargo clippy on crates/core
+moon run rs:build          # cargo build on crates/core
+moon run rs-derive:check   # check the derive crate
+moon run ts:check          # tsc --noEmit on libs/core
+moon run ts:build          # bun build on libs/core
+moon run schema:check      # bun run validate.ts
 
-## Moon Documentation Reference
+# Check everything
+moon check --all
 
-When working with moon configuration or tasks, refer to these docs:
+# Inspect the project graph
+moon project rs            # show project details
+moon projects              # list all projects
+```
 
-### Getting Started
+## Moon Config Layout
 
-- https://moonrepo.dev/docs
-- https://moonrepo.dev/docs/install
-- https://moonrepo.dev/docs/how-it-works
-- https://moonrepo.dev/docs/setup-workspace
-- https://moonrepo.dev/docs/create-project
-- https://moonrepo.dev/docs/setup-toolchain
-- https://moonrepo.dev/docs/create-task
-- https://moonrepo.dev/docs/run-task
-- https://moonrepo.dev/docs/cheat-sheet
-- https://moonrepo.dev/docs/faq
+```
+.moon/
+├── workspace.yml          # projects: [libs/*, crates/*, apps/*, schema]
+├── toolchain.yml          # bun + rust enabled
+└── tasks/
+    ├── typescript.yml      # inherited tasks: check, lint, build
+    └── rust.yml            # inherited tasks: check, lint, build
+```
 
-### Config Files
+Per-project overrides live in each project's `moon.yml`. Task inheritance means most projects get check/lint/build for free from `.moon/tasks/`.
 
-- https://moonrepo.dev/docs/config/overview
-- https://moonrepo.dev/docs/config/workspace — `.moon/workspace.yml`
-- https://moonrepo.dev/docs/config/toolchain — `.moon/toolchain.yml`
-- https://moonrepo.dev/docs/config/tasks — `.moon/tasks/**/*.yml` (inherited tasks)
-- https://moonrepo.dev/docs/config/project — `moon.yml` (per-project)
-- https://moonrepo.dev/docs/config/template — `template.yml`
-- https://moonrepo.dev/docs/config/extensions — `.moon/extensions.yml`
+## Workspace Roots
 
-### Concepts
+- **Cargo workspace:** `Cargo.toml` at repo root, members: `crates/*`
+- **Bun workspaces:** `package.json` at repo root, workspaces: `libs/*`, `apps/*`
 
-- https://moonrepo.dev/docs/concepts/workspace
-- https://moonrepo.dev/docs/concepts/project
-- https://moonrepo.dev/docs/concepts/task
-- https://moonrepo.dev/docs/concepts/task-inheritance
-- https://moonrepo.dev/docs/concepts/toolchain
-- https://moonrepo.dev/docs/concepts/target
-- https://moonrepo.dev/docs/concepts/token
-- https://moonrepo.dev/docs/concepts/file-group
-- https://moonrepo.dev/docs/concepts/file-pattern
-- https://moonrepo.dev/docs/concepts/query-lang
-- https://moonrepo.dev/docs/concepts/cache
-- https://moonrepo.dev/docs/concepts/affected
+## Dependency Graph
 
-### Commands
+- `crates/core` optionally depends on `crates/derive` (feature flag: `derive`, on by default)
+- `apps/visualizer` depends on `libs/core` via bun workspace link
 
-- https://moonrepo.dev/docs/commands/overview
-- https://moonrepo.dev/docs/commands/run
-- https://moonrepo.dev/docs/commands/check
-- https://moonrepo.dev/docs/commands/ci
-- https://moonrepo.dev/docs/commands/project
-- https://moonrepo.dev/docs/commands/projects
-- https://moonrepo.dev/docs/commands/project-graph
-- https://moonrepo.dev/docs/commands/task
-- https://moonrepo.dev/docs/commands/tasks
-- https://moonrepo.dev/docs/commands/task-graph
-- https://moonrepo.dev/docs/commands/action-graph
-- https://moonrepo.dev/docs/commands/query
-- https://moonrepo.dev/docs/commands/sync
-- https://moonrepo.dev/docs/commands/setup
-- https://moonrepo.dev/docs/commands/clean
-- https://moonrepo.dev/docs/commands/hash
-- https://moonrepo.dev/docs/commands/bin
-- https://moonrepo.dev/docs/commands/exec
-- https://moonrepo.dev/docs/commands/docker
-- https://moonrepo.dev/docs/commands/generate
-- https://moonrepo.dev/docs/commands/ext
-- https://moonrepo.dev/docs/commands/extension
-- https://moonrepo.dev/docs/commands/mcp
-- https://moonrepo.dev/docs/commands/toolchain
-- https://moonrepo.dev/docs/commands/completions
-- https://moonrepo.dev/docs/commands/teardown
-- https://moonrepo.dev/docs/commands/upgrade
-- https://moonrepo.dev/docs/commands/template
-- https://moonrepo.dev/docs/commands/templates
+## Moon Docs (when needed)
 
-### Guides
-
-- https://moonrepo.dev/docs/guides/javascript/bun-handbook
-- https://moonrepo.dev/docs/guides/javascript/node-handbook
-- https://moonrepo.dev/docs/guides/javascript/deno-handbook
-- https://moonrepo.dev/docs/guides/javascript/typescript-project-refs
-- https://moonrepo.dev/docs/guides/rust/handbook
-- https://moonrepo.dev/docs/guides/ci
-- https://moonrepo.dev/docs/guides/docker
-- https://moonrepo.dev/docs/guides/remote-cache
-- https://moonrepo.dev/docs/guides/codegen
-- https://moonrepo.dev/docs/guides/codeowners
-- https://moonrepo.dev/docs/guides/debug-task
-- https://moonrepo.dev/docs/guides/extensions
-- https://moonrepo.dev/docs/guides/mcp
-- https://moonrepo.dev/docs/guides/offline-mode
-- https://moonrepo.dev/docs/guides/open-source
-- https://moonrepo.dev/docs/guides/root-project
-- https://moonrepo.dev/docs/guides/sharing-config
-- https://moonrepo.dev/docs/guides/notifications
-- https://moonrepo.dev/docs/guides/vcs-hooks
-- https://moonrepo.dev/docs/guides/wasm-plugins
-- https://moonrepo.dev/docs/guides/webhooks
-- https://moonrepo.dev/docs/guides/profile
-- https://moonrepo.dev/docs/guides/node/examples
-
-### Other
-
-- https://moonrepo.dev/docs/terminology
-- https://moonrepo.dev/docs/migrate/2.0
-- https://github.com/moonrepo/moon/releases — Changelog
+- Config reference: https://moonrepo.dev/docs/config/overview
+- Task config: https://moonrepo.dev/docs/config/tasks
+- Project config: https://moonrepo.dev/docs/config/project
+- Bun guide: https://moonrepo.dev/docs/guides/javascript/bun-handbook
+- Rust guide: https://moonrepo.dev/docs/guides/rust/handbook
