@@ -6,4 +6,6 @@ pub enum Error {
     Suture(String),
     Stitch(String),
     Unstitch(String),
+    Knit(String),
+    Unknit(String),
 }
