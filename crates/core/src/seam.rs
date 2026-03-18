@@ -3,6 +3,8 @@
 /// Implemented by `#[derive(Seam)]`.
 /// Returns a static, ordered slice of fields — zero heap, fully compile-time.
 pub trait Seam {
+    const IS_ENUM: bool;
+    const IS_ANON_STRUCT: bool;
     fn fields() -> &'static [SeamField];
 }
 
