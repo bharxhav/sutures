@@ -10,4 +10,4 @@ pub use sutures_derive::Seam;
 pub use seam::Seam;
 
 // Alias v1 as the default
-pub use v1::load;
+pub use v1::{load, parse};
