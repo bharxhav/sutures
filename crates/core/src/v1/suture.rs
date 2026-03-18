@@ -1,4 +1,4 @@
-use super::manifest::Direction;
+use super::schema::Direction;
 
 /// A validated suture — one suture_set, compiled and ready to operate.
 ///
