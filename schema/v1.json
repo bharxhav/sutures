@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.sutures.dev/v1.json",
   "title": "Sutures DSL V1",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Declarative field mapping between JSON payloads and typed structures",
   "type": "object",
   "required": ["name", "suture_sets"],
@@ -83,13 +83,13 @@
     },
 
     "struct_terminal": {
-      "description": "A dotted path starting with a letter that navigates into a typed structure",
+      "description": "A path starting with a letter that navigates into a typed structure",
       "type": "string",
       "pattern": "^[A-Za-z][A-Za-z0-9_$.\\[\\]:?/`^()\\-+\\\\*|]*$"
     },
 
     "request_suture": {
-      "description": "Maps struct field keys to JSON path values, with optional _ filters for injection constraints",
+      "description": "Maps struct field keys to JSON path values, with optional _ for injecting constants",
       "type": "object",
       "propertyNames": {
         "oneOf": [{ "const": "_" }, { "$ref": "#/$defs/struct_terminal" }]
@@ -127,7 +127,7 @@
     },
 
     "response_suture": {
-      "description": "Maps JSON path keys to struct field values, with optional _ filters for extraction constraints",
+      "description": "Maps JSON path keys to struct field values, with optional _ for injecting constants",
       "type": "object",
       "propertyNames": {
         "oneOf": [{ "const": "_" }, { "$ref": "#/$defs/json_terminal" }]
