@@ -1,0 +1,5 @@
+error: unknown seam variant attribute
+ --> tests/compile_fail/unknown_variant_attr.rs:5:12
+  |
+5 |     #[seam(bogus)]
+  |            ^^^^^

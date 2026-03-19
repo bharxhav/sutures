@@ -1,0 +1,5 @@
+error: skip cannot be combined with to_struct, to_enum, or to_anon_struct
+  --> tests/compile_fail/skip_with_nesting.rs:11:5
+   |
+11 |     field: Inner,
+   |     ^^^^^

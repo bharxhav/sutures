@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: field marked #[seam(to_enum)] but type is not a Seam enum
+ --> tests/compile_fail/to_enum_on_struct.rs:8:10
+  |
+8 | #[derive(Seam)]
+  |          ^^^^ evaluation of `<Bad as sutures::Seam>::fields::_` failed here

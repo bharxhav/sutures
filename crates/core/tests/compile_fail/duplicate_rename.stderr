@@ -1,0 +1,5 @@
+error: duplicate `rename` attribute
+ --> tests/compile_fail/duplicate_rename.rs:5:26
+  |
+5 |     #[seam(rename = "a", rename = "b")]
+  |                          ^^^^^^

@@ -1,0 +1,5 @@
+error: only one of to_struct, to_enum, to_anon_struct may be specified
+  --> tests/compile_fail/conflicting_nesting.rs:11:5
+   |
+11 |     field: Inner,
+   |     ^^^^^
