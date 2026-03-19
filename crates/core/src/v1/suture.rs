@@ -26,3 +26,51 @@ pub enum Binding {
         todo!()
     },
 }
+
+impl Suture {
+    /// Returns the suture's id, if one was set.
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
+    /// Returns the suture's name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the description, if one was set.
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
+    /// Returns the version, if one was set.
+    pub fn version(&self) -> Option<&str> {
+        self.version.as_deref()
+    }
+
+    /// Returns a reference to the compiled binding.
+    pub fn binding(&self) -> &Binding {
+        &self.binding
+    }
+
+    /// True when the binding captures request direction (struct → JSON).
+    pub fn is_request(&self) -> bool {
+        matches!(self.binding, Binding::Request { .. })
+    }
+
+    /// True when the binding captures response direction (JSON → struct).
+    pub fn is_response(&self) -> bool {
+        matches!(self.binding, Binding::Response { .. })
+    }
+}
+
+impl std::fmt::Display for Suture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match (&self.id, &self.version) {
+            (Some(id), Some(v)) => write!(f, "{}@{} ({})", self.name, v, id),
+            (Some(id), None) => write!(f, "{} ({})", self.name, id),
+            (None, Some(v)) => write!(f, "{}@{}", self.name, v),
+            (None, None) => write!(f, "{}", self.name),
+        }
+    }
+}
