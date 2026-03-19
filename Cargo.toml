@@ -4,3 +4,5 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 sutures-derive = { path = "crates/derive", version = "0.0.1" }
+sutures = { path = "crates/core", version = "0.0.1" }
+sutures-comptime = { path = "crates/comptime", version = "0.0.1" }
