@@ -5,18 +5,16 @@
 // compilation into the path tree.
 // ---------------------------------------------------------------------------
 
+use serde::Deserialize;
+
 // ---- Root object ----------------------------------------------------------
 
 /// Root object of a `.sutures.json` file.
 ///
-/// Schema: required `name`, `suture_sets`.
-/// Optional `id`, `description`, `version`.
-#[derive(Debug)]
+/// Only `suture_sets` is needed for compilation.
+/// Metadata fields (`name`, `id`, `description`, `version`) are ignored.
+#[derive(Debug, Deserialize)]
 pub(crate) struct SutureSchema {
-    pub name: String,
-    pub id: Option<String>,
-    pub description: Option<String>,
-    pub version: Option<String>,
     pub suture_sets: Vec<RawSutureSet>,
 }
 
@@ -33,7 +31,7 @@ pub(crate) struct SutureSchema {
 /// `sutures` is kept as raw `Value` because individual suture objects have
 /// dynamic keys (the terminal paths ARE the keys). Parsed into `RawSuture`
 /// during compilation.
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub(crate) struct RawSutureSet {
     pub id: Option<String>,
     pub name: String,
@@ -44,7 +42,8 @@ pub(crate) struct RawSutureSet {
 }
 
 /// Capture direction — `"request"` | `"response"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Direction {
     Request,
     Response,
