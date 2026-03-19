@@ -8,6 +8,9 @@ pub use knit::*;
 pub use schema::Direction;
 pub use stitch::*;
 pub use suture::*;
+pub use suture::{
+    Binding, JsonPathProxy, JsonPathProxyAction, StructFieldProxy, StructFieldProxyAction,
+};
 
 use crate::error::Error;
 use compile::compile_suture_set;
