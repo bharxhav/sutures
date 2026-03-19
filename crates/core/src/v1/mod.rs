@@ -1,12 +1,8 @@
 mod compile;
-mod knit;
 mod schema;
-mod stitch;
 mod suture;
 
-pub use knit::*;
 pub use schema::Direction;
-pub use stitch::*;
 pub use suture::*;
 pub use suture::{
     Binding, JsonPathProxy, JsonPathProxyAction, StructFieldProxy, StructFieldProxyAction,

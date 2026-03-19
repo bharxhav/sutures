@@ -1,13 +1,13 @@
 use crate::error::Error;
 use crate::seam::Seam;
 
-/// Streaming-layer operations on a compiled [`Suture`](super::Suture).
+/// Streaming-layer operations on a compiled [`Suture`](crate::v1::Suture).
 ///
 /// `knit` serializes a struct directly to bytes, guided by the compiled path tree.
 /// `unknit` deserializes bytes directly into a struct via `DeserializeSeed`,
 /// skipping the intermediate `serde_json::Value` allocation entirely.
 ///
-/// Same compiled tree as [`Stitch`](super::Stitch), different traversal strategy.
+/// Same compiled tree as [`Stitch`](crate::Stitch), different traversal strategy.
 pub trait Knit {
     /// Request direction: struct → bytes.
     /// Walks the compiled tree, reads struct fields via Seam, writes JSON directly.

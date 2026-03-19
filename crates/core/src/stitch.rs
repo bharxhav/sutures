@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::seam::Seam;
 
-/// Value-layer operations on a compiled [`Suture`](super::Suture).
+/// Value-layer operations on a compiled [`Suture`](crate::v1::Suture).
 ///
 /// `stitch` builds a `serde_json::Value` tree from a struct.
 /// `unstitch` extracts a struct from a `serde_json::Value` tree.
