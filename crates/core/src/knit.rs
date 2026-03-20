@@ -11,9 +11,9 @@ use crate::seam::Seam;
 pub trait Knit {
     /// Request direction: struct → bytes.
     /// Walks the compiled tree, reads struct fields via Seam, writes JSON directly.
-    fn knit<T: Seam>(&self, input: &T) -> Result<Vec<u8>, Error>;
+    fn knit<T: Seam + serde::Serialize>(&self, input: &T) -> Result<Vec<u8>, Error>;
 
     /// Response direction: bytes → struct.
     /// Single-pass `DeserializeSeed` traversal — never materializes the full JSON tree.
-    fn unknit<T: Seam>(&self, input: &[u8]) -> Result<T, Error>;
+    fn unknit<T: Seam + serde::de::DeserializeOwned>(&self, input: &[u8]) -> Result<T, Error>;
 }

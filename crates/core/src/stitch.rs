@@ -6,14 +6,18 @@ use crate::seam::Seam;
 /// `stitch` builds a `serde_json::Value` tree from a struct.
 /// `unstitch` extracts a struct from a `serde_json::Value` tree.
 ///
-/// Both walk the compiled path tree and index into Value directly —
-/// no serde Deserialize/Serialize machinery involved.
+/// Both walk the compiled path tree and index into Value directly
+/// serde Serialize/DeserializeOwned bounds are required to bridge
+/// between typed structs and `serde_json::Value`.
 pub trait Stitch {
     /// Request direction: struct → Value.
     /// Walks the compiled tree, reads struct fields via Seam, places values at JSON paths.
-    fn stitch<T: Seam>(&self, input: &T) -> Result<serde_json::Value, Error>;
+    fn stitch<T: Seam + serde::Serialize>(&self, input: &T) -> Result<serde_json::Value, Error>;
 
     /// Response direction: Value → struct.
     /// Walks the compiled tree, extracts values from JSON paths, constructs struct via Seam.
-    fn unstitch<T: Seam>(&self, input: &serde_json::Value) -> Result<T, Error>;
+    fn unstitch<T: Seam + serde::de::DeserializeOwned>(
+        &self,
+        input: &serde_json::Value,
+    ) -> Result<T, Error>;
 }
