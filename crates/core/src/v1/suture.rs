@@ -39,22 +39,26 @@ pub enum Bindings {
     ///
     /// At execution time, walk the struct via `Seam`, look up each field
     /// name in O(1), and apply the corresponding strategy.
-    Request(HashMap<Cow<'static, str>, BindingStrategy>),
+    Request(TrieNode),
     /// JSON → struct (deserialization path).
-    Response,
-}
-
-/// Describes how a single struct field maps to the JSON output.
-#[derive(Debug)]
-pub struct BindingStrategy {
-    pub(crate) targets: Vec<BindingType>,
-    /// When `true` the inner fields are iterated.
-    pub(crate) check_inner_fields: bool,
+    ///
+    /// Key: JSON key (from the incoming payload).
+    /// Value: strategy describing where to write and whether to recurse.
+    ///
+    /// At execution time, walk the JSON value's keys, look up each in O(1),
+    /// and apply the corresponding strategy to populate the struct.
+    Response(TrieNode),
 }
 
 #[derive(Debug)]
-pub enum BindingType {
-    /// No complex strategies on LHS
+pub struct TrieNode {
+    key: Cow<'static, str>,
+    tasks: Vec<(Option<TrieNode>, BindingTaskType)>,
+}
+
+#[derive(Debug, Clone)]
+pub enum BindingTaskType {
+    /// serde on target
     Direct(Cow<'static, str>),
     /// Iterate on current item,
     Iterate {
@@ -110,7 +114,7 @@ impl Suture {
 
     /// True when the binding captures response direction (JSON → struct).
     pub fn is_response(&self) -> bool {
-        matches!(self.binding, Bindings::Response { .. })
+        matches!(self.binding, Bindings::Response(_))
     }
 }
 
