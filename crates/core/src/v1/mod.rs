@@ -1,15 +1,14 @@
-mod compile;
+mod knit;
+mod optimize;
 mod schema;
+mod stitch;
 mod suture;
 
-pub use schema::Direction;
-pub use suture::*;
-pub use suture::{
-    Binding, JsonPathProxy, JsonPathProxyAction, StructFieldProxy, StructFieldProxyAction,
-};
+pub use schema::{ConstantValue, Direction};
+pub use suture::{Binding, PathSegment, Suture};
 
 use crate::error::Error;
-use compile::compile_suture_set;
+use optimize::compile_suture_set;
 use schema::SutureSchema;
 use serde_json::Value;
 
