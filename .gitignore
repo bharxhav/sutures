@@ -1,6 +1,7 @@
 # moon
 .moon/cache
 .moon/docker
+.moon/hooks
 
 # bun
 node_modules
