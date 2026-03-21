@@ -44,11 +44,22 @@ pub enum Bindings {
 /// Describes how a single struct field maps to the JSON output.
 #[derive(Debug)]
 pub struct BindingStrategy {
-    /// JSON-side destination paths this field writes to.
-    /// Usually one, but fan-out mappings produce multiple targets.
-    pub(crate) targets: Vec<Cow<'static, str>>,
+    pub(crate) targets: Vec<BindingType>,
     /// When `true` the inner fields are iterated.
     pub(crate) check_inner_fields: bool,
+}
+
+#[derive(Debug)]
+pub enum BindingType {
+    /// No complex strategies on LHS
+    Direct(Cow<'static, str>),
+    /// Iterate on current item,
+    Iterate {
+        target: Cow<'static, str>,
+        start: i64,
+        end: i64,
+        step: i64,
+    },
 }
 
 // ---------------------------------------------------------------------------
