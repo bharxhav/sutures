@@ -1,5 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
+use serde_json::Value;
+
 /// A validated suture: one suture_set, compiled and ready to operate.
 ///
 /// Use via [`Stitch`](super::Stitch) (Value layer) or [`Knit`](super::Knit) (streaming layer).
@@ -14,6 +16,7 @@ pub struct Suture {
     pub(crate) description: Option<Cow<'static, str>>,
     pub(crate) version: Option<Cow<'static, str>>,
     pub(crate) binding: Bindings,
+    pub(crate) constants: Vec<(Cow<'static, str>, Value)>,
 }
 
 /// Compiled mapping data, varying by capture direction.
@@ -56,9 +59,17 @@ pub enum BindingType {
     /// Iterate on current item,
     Iterate {
         target: Cow<'static, str>,
-        start: i64,
-        end: i64,
-        step: i64,
+        start: Option<i64>,
+        end: Option<i64>,
+        step: Option<i64>,
+    },
+    /// Iterate Regex on current item,
+    IteratePattern {
+        pattern: Cow<'static, str>,
+        target: Cow<'static, str>,
+        start: Option<i64>,
+        end: Option<i64>,
+        step: Option<i64>,
     },
 }
 
