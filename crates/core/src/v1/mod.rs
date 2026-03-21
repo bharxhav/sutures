@@ -3,6 +3,7 @@ mod optimize;
 mod schema;
 mod stitch;
 mod suture;
+mod validate;
 
 pub use schema::Direction;
 pub use suture::{Bindings, Suture};
