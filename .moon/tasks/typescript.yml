@@ -12,6 +12,11 @@ tasks:
     inputs:
       - "src/**/*"
       - "tsconfig.json"
+  fmt:
+    command: "bun x prettier --write"
+    args: ["src/"]
+    inputs:
+      - "src/**/*"
   build:
     command: "bun build src/index.ts --outdir dist"
     inputs:

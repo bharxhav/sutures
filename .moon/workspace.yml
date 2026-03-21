@@ -15,3 +15,7 @@ vcs:
   # @values "bitbucket" | "github" | "gitlab" | "other"
   provider: "github"
 
+  hooks:
+    pre-commit:
+      - "moon run :fmt :check --affected --status=staged"
+  sync: true

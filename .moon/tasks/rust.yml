@@ -16,6 +16,12 @@ tasks:
       - "Cargo.toml"
     env:
       CARGO_TERM_COLOR: "always"
+  fmt:
+    command: "cargo fmt"
+    inputs:
+      - "src/**/*"
+    env:
+      CARGO_TERM_COLOR: "always"
   build:
     command: "cargo build "
     inputs:
