@@ -5,7 +5,7 @@ mod stitch;
 mod suture;
 
 pub use schema::Direction;
-pub use suture::{Binding, Suture};
+pub use suture::{Bindings, Suture};
 
 use crate::error::Error;
 use optimize::compile_suture_set;

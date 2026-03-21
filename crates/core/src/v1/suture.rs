@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap};
 
 /// A validated suture: one suture_set, compiled and ready to operate.
 ///
@@ -13,7 +13,7 @@ pub struct Suture {
     pub(crate) name: Cow<'static, str>,
     pub(crate) description: Option<Cow<'static, str>>,
     pub(crate) version: Option<Cow<'static, str>>,
-    pub(crate) binding: Binding,
+    pub(crate) binding: Bindings,
 }
 
 /// Compiled mapping data, varying by capture direction.
@@ -28,11 +28,27 @@ pub struct Suture {
 /// Nested DSL objects are flattened during compilation by prepending the
 /// parent path, so the mapping list is always flat.
 #[derive(Debug)]
-pub enum Binding {
+pub enum Bindings {
     /// struct → JSON (serialization path).
-    Request,
+    ///
+    /// Key: struct field name (from `Seam::fields()`).
+    /// Value: strategy describing where to write and whether to recurse.
+    ///
+    /// At execution time, walk the struct via `Seam`, look up each field
+    /// name in O(1), and apply the corresponding strategy.
+    Request(HashMap<Cow<'static, str>, BindingStrategy>),
     /// JSON → struct (deserialization path).
     Response,
+}
+
+/// Describes how a single struct field maps to the JSON output.
+#[derive(Debug)]
+pub struct BindingStrategy {
+    /// JSON-side destination paths this field writes to.
+    /// Usually one, but fan-out mappings produce multiple targets.
+    pub(crate) targets: Vec<Cow<'static, str>>,
+    /// When `true` the inner fields are iterated.
+    pub(crate) check_inner_fields: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -61,18 +77,18 @@ impl Suture {
     }
 
     /// Returns a reference to the compiled binding.
-    pub fn binding(&self) -> &Binding {
+    pub fn binding(&self) -> &Bindings {
         &self.binding
     }
 
     /// True when the binding captures request direction (struct → JSON).
     pub fn is_request(&self) -> bool {
-        matches!(self.binding, Binding::Request { .. })
+        matches!(self.binding, Bindings::Request { .. })
     }
 
     /// True when the binding captures response direction (JSON → struct).
     pub fn is_response(&self) -> bool {
-        matches!(self.binding, Binding::Response { .. })
+        matches!(self.binding, Bindings::Response { .. })
     }
 }
 
