@@ -4,8 +4,8 @@ mod schema;
 mod stitch;
 mod suture;
 
-pub use schema::{ConstantValue, Direction};
-pub use suture::{Binding, PathSegment, Suture};
+pub use schema::Direction;
+pub use suture::{Binding, Suture};
 
 use crate::error::Error;
 use optimize::compile_suture_set;
