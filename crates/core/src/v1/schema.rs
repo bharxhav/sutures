@@ -120,23 +120,12 @@ pub(crate) enum RawMappingValue {
 /// One entry in a `_` constants array.
 ///
 /// Schema: object with exactly 1 property (minProperties: 1, maxProperties: 1).
-/// Key is a terminal, value is a JSON scalar.
+/// Key is a terminal, value is any valid JSON.
 ///
 /// For request: key is `json_terminal`, value is injected into the JSON output.
 /// For response: key is `struct_terminal`, value is injected into the struct.
 #[derive(Debug)]
 pub(crate) struct RawConstantEntry {
     pub terminal: String,
-    pub value: ConstantValue,
-}
-
-/// Scalar constant for a `_` injection.
-///
-/// Schema `additionalProperties.oneOf`: string | number | boolean | null.
-#[derive(Debug, Clone)]
-pub(crate) enum ConstantValue {
-    String(String),
-    Number(serde_json::Number),
-    Bool(bool),
-    Null,
+    pub value: serde_json::Value,
 }
