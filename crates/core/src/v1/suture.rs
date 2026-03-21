@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use serde_json::Value;
 
@@ -52,8 +52,8 @@ pub enum Bindings {
 
 #[derive(Debug)]
 pub struct TrieNode {
-    key: Cow<'static, str>,
-    tasks: Vec<(Option<TrieNode>, BindingTaskType)>,
+    pub(crate) key: Cow<'static, str>,
+    pub(crate) tasks: Vec<(Option<TrieNode>, BindingTaskType)>,
 }
 
 #[derive(Debug, Clone)]

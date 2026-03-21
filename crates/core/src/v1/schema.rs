@@ -37,7 +37,7 @@ pub(crate) struct RawSutureSet {
     pub name: String,
     pub description: Option<String>,
     pub version: Option<String>,
-    pub capture: Direction,
+    pub capture_direction: Direction,
     pub sutures: Vec<serde_json::Value>,
 }
 
