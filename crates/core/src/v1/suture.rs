@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use serde_json::Value;
-
 /// A validated suture: one suture_set, compiled and ready to operate.
 ///
 /// Use via [`Stitch`](super::Stitch) (Value layer) or [`Knit`](super::Knit) (streaming layer).
@@ -16,7 +14,21 @@ pub struct Suture {
     pub(crate) description: Option<Cow<'static, str>>,
     pub(crate) version: Option<Cow<'static, str>>,
     pub(crate) binding: Bindings,
-    pub(crate) constants: Vec<(Cow<'static, str>, Value)>,
+    pub(crate) constants: Vec<(Cow<'static, str>, ConstantValue)>,
+}
+
+/// A scalar value for constant injection.
+///
+/// Replaces `serde_json::Value` in the compiled representation so that
+/// downstream code (including proc-macro generated code) has no dependency
+/// on `serde_json`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConstantValue {
+    Null,
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    String(Cow<'static, str>),
 }
 
 /// Compiled mapping trie, varying by capture direction.
@@ -114,6 +126,74 @@ impl Suture {
     /// True when the binding captures response direction (JSON → struct).
     pub fn is_response(&self) -> bool {
         matches!(self.binding, Bindings::Response(_))
+    }
+}
+
+impl Suture {
+    /// Returns the compiled constants list.
+    pub fn constants(&self) -> &[(Cow<'static, str>, ConstantValue)] {
+        &self.constants
+    }
+}
+
+impl TrieNode {
+    /// Returns the key for this trie node.
+    pub fn key(&self) -> &str {
+        &self.key
+    }
+
+    /// Returns the binding task type.
+    pub fn binding(&self) -> &BindingTaskType {
+        &self.binding
+    }
+
+    /// Returns the target paths.
+    pub fn targets(&self) -> &[Cow<'static, str>] {
+        &self.targets
+    }
+
+    /// Returns the child nodes.
+    pub fn children(&self) -> &[TrieNode] {
+        &self.children
+    }
+}
+
+impl Bindings {
+    /// Returns a reference to the inner trie root.
+    pub fn root(&self) -> &TrieNode {
+        match self {
+            Bindings::Request(root) | Bindings::Response(root) => root,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Compile-time constructors (used by sutures_comptime proc-macro)
+// ---------------------------------------------------------------------------
+
+impl Suture {
+    #[doc(hidden)]
+    pub fn __comptime(
+        id: Option<Cow<'static, str>>,
+        name: Cow<'static, str>,
+        description: Option<Cow<'static, str>>,
+        version: Option<Cow<'static, str>>,
+        binding: Bindings,
+        constants: Vec<(Cow<'static, str>, ConstantValue)>,
+    ) -> Self {
+        Self { id, name, description, version, binding, constants }
+    }
+}
+
+impl TrieNode {
+    #[doc(hidden)]
+    pub fn __comptime(
+        key: Cow<'static, str>,
+        binding: BindingTaskType,
+        targets: Vec<Cow<'static, str>>,
+        children: Vec<TrieNode>,
+    ) -> Self {
+        Self { key, binding, targets, children }
     }
 }
 

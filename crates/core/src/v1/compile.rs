@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::collections::VecDeque;
 
 use super::schema::{Direction, RawSutureSet};
-use super::suture::{BindingTaskType, Bindings, Suture, TrieNode};
+use super::suture::{BindingTaskType, Bindings, ConstantValue, Suture, TrieNode};
 use super::validate::{validate_constant, validate_key, validate_terminal};
 use crate::error::Error;
 
@@ -27,7 +27,7 @@ pub(super) fn compile(set: RawSutureSet) -> Result<Suture, Error> {
     })
 }
 
-type CompilationResult = (Bindings, Vec<(Cow<'static, str>, serde_json::Value)>);
+type CompilationResult = (Bindings, Vec<(Cow<'static, str>, ConstantValue)>);
 
 // ===========================================================================
 // Core loop
@@ -50,7 +50,7 @@ fn compile_bindings(suture_set: &RawSutureSet) -> Result<CompilationResult, Erro
         targets: vec![],
         children: vec![],
     };
-    let mut constants: Vec<(Cow<'static, str>, serde_json::Value)> = Vec::new();
+    let mut constants: Vec<(Cow<'static, str>, ConstantValue)> = Vec::new();
 
     for (i, raw) in suture_set.sutures.iter().enumerate() {
         let ctx = format!("suture[{i}]");
@@ -168,7 +168,7 @@ fn compile_bindings(suture_set: &RawSutureSet) -> Result<CompilationResult, Erro
 /// Validate and collect constant entries from a `_` key.
 fn compile_constants(
     val: &serde_json::Value,
-    constants: &mut Vec<(Cow<'static, str>, serde_json::Value)>,
+    constants: &mut Vec<(Cow<'static, str>, ConstantValue)>,
     ctx: &str,
     direction: &Direction,
 ) -> Result<(), Error> {
@@ -189,9 +189,31 @@ fn compile_constants(
         validate_terminal(terminal, direction)
             .map_err(|e| Error::Suture(format!("{ctx}: constant '{terminal}': {e}")))?;
         validate_constant(v).map_err(|e| Error::Suture(format!("{ctx}: {e}")))?;
-        constants.push((Cow::Owned(terminal.clone()), v.clone()));
+        let cv = json_to_constant(v, ctx)?;
+        constants.push((Cow::Owned(terminal.clone()), cv));
     }
     Ok(())
+}
+
+/// Convert a scalar `serde_json::Value` into a `ConstantValue`.
+///
+/// Called after `validate_constant`, so only scalar variants are reachable.
+fn json_to_constant(val: &serde_json::Value, ctx: &str) -> Result<ConstantValue, Error> {
+    match val {
+        serde_json::Value::Null => Ok(ConstantValue::Null),
+        serde_json::Value::Bool(b) => Ok(ConstantValue::Bool(*b)),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(ConstantValue::Int(i))
+            } else if let Some(f) = n.as_f64() {
+                Ok(ConstantValue::Float(f))
+            } else {
+                Err(Error::Suture(format!("{ctx}: unsupported number: {n}")))
+            }
+        }
+        serde_json::Value::String(s) => Ok(ConstantValue::String(Cow::Owned(s.clone()))),
+        _ => Err(Error::Suture(format!("{ctx}: constant must be a scalar"))),
+    }
 }
 
 /// Build a chain of TrieNodes from path segments, bottom-up.

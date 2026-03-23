@@ -8,6 +8,11 @@ mod validate;
 pub use schema::Direction;
 pub use suture::{Bindings, Suture};
 
+pub use suture::ConstantValue;
+
+#[doc(hidden)]
+pub use suture::{BindingTaskType, TrieNode};
+
 use crate::error::Error;
 use compile::compile;
 use schema::SutureSchema;
