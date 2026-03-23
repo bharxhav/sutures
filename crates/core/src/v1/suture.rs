@@ -181,7 +181,14 @@ impl Suture {
         binding: Bindings,
         constants: Vec<(Cow<'static, str>, ConstantValue)>,
     ) -> Self {
-        Self { id, name, description, version, binding, constants }
+        Self {
+            id,
+            name,
+            description,
+            version,
+            binding,
+            constants,
+        }
     }
 }
 
@@ -193,7 +200,12 @@ impl TrieNode {
         targets: Vec<Cow<'static, str>>,
         children: Vec<TrieNode>,
     ) -> Self {
-        Self { key, binding, targets, children }
+        Self {
+            key,
+            binding,
+            targets,
+            children,
+        }
     }
 }
 
