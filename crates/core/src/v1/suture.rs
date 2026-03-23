@@ -19,58 +19,57 @@ pub struct Suture {
     pub(crate) constants: Vec<(Cow<'static, str>, Value)>,
 }
 
-/// Compiled mapping data, varying by capture direction.
+/// Compiled mapping trie, varying by capture direction.
 ///
-/// Both variants hold a flat list of source → destination mappings plus
-/// any constant injections. The `Binding` variant determines the
-/// semantic direction:
+/// The trie mirrors the source-side structure. Each node carries a binding
+/// (Direct / Iterate / IteratePattern) that tells the runtime HOW to
+/// traverse, and zero or more targets that tell it WHERE to write.
 ///
-/// - **Request**: source paths are struct-side, dest paths are JSON-side.
-/// - **Response**: source paths are JSON-side, dest paths are struct-side.
-///
-/// Nested DSL objects are flattened during compilation by prepending the
-/// parent path, so the mapping list is always flat.
+/// - **Request**: trie follows struct-side paths, targets are JSON-side.
+/// - **Response**: trie follows JSON-side paths, targets are struct-side.
 #[derive(Debug)]
 pub enum Bindings {
     /// struct → JSON (serialization path).
     ///
-    /// Key: struct field name (from `Seam::fields()`).
-    /// Value: strategy describing where to write and whether to recurse.
-    ///
-    /// At execution time, walk the struct via `Seam`, look up each field
-    /// name in O(1), and apply the corresponding strategy.
+    /// Walk the struct via `Seam`, match each field against the trie's
+    /// children, and apply the corresponding binding strategy.
     Request(TrieNode),
     /// JSON → struct (deserialization path).
     ///
-    /// Key: JSON key (from the incoming payload).
-    /// Value: strategy describing where to write and whether to recurse.
-    ///
-    /// At execution time, walk the JSON value's keys, look up each in O(1),
-    /// and apply the corresponding strategy to populate the struct.
+    /// Walk the JSON value's keys, match each against the trie's
+    /// children, and apply the corresponding binding strategy.
     Response(TrieNode),
 }
 
+/// A node in the compiled mapping trie.
+///
+/// A node may have both `targets` and `children`. This means the node
+/// captures the current value to the listed targets AND recurses into
+/// children for sub-field extraction.
+///
+/// A single-index `[N]` is compiled as `Iterate { start: N, end: N+1, step: 1 }`
+/// — a length-1 slice. The runtime treats it identically to a slice.
 #[derive(Debug)]
 pub struct TrieNode {
     pub(crate) key: Cow<'static, str>,
-    pub(crate) tasks: Vec<(Option<TrieNode>, BindingTaskType)>,
+    pub(crate) binding: BindingTaskType,
+    pub(crate) targets: Vec<Cow<'static, str>>,
+    pub(crate) children: Vec<TrieNode>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BindingTaskType {
-    /// serde on target
-    Direct(Cow<'static, str>),
-    /// Iterate on current item,
+    /// Direct key lookup — serde on this field.
+    Direct,
+    /// Iterate array with optional pythonic slice range.
     Iterate {
-        target: Cow<'static, str>,
         start: Option<i64>,
         end: Option<i64>,
         step: Option<i64>,
     },
-    /// Iterate Regex on current item,
+    /// Iterate keys matching a regex pattern with optional range.
     IteratePattern {
         pattern: Cow<'static, str>,
-        target: Cow<'static, str>,
         start: Option<i64>,
         end: Option<i64>,
         step: Option<i64>,

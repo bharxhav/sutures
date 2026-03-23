@@ -12,9 +12,10 @@ use serde::Deserialize;
 /// Root object of a `.sutures.json` file.
 ///
 /// Only `suture_sets` is needed for compilation.
-/// Metadata fields (`name`, `id`, `description`, `version`) are ignored.
+/// The `name` field is required by the schema but not used after validation.
 #[derive(Debug, Deserialize)]
 pub(crate) struct SutureSchema {
+    pub name: String,
     pub suture_sets: Vec<RawSutureSet>,
 }
 
@@ -37,6 +38,7 @@ pub(crate) struct RawSutureSet {
     pub name: String,
     pub description: Option<String>,
     pub version: Option<String>,
+    #[serde(rename = "capture")]
     pub capture_direction: Direction,
     pub sutures: Vec<serde_json::Value>,
 }

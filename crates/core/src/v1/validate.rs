@@ -39,9 +39,13 @@ pub(super) fn validate_key(key: &str, direction: &Direction) -> Result<(), Error
     if key.is_empty() {
         return Err(Error::Suture("key must not be empty".into()));
     }
-    match direction {
-        Direction::Request => validate_struct_terminal(key, "request key")?,
-        Direction::Response => validate_json_terminal(key, "response key")?,
+    // Regex keys (backtick-leading) bypass direction-specific terminal format checks.
+    // Response regex keys always start with `/` first, so this only affects request.
+    if !key.starts_with('`') {
+        match direction {
+            Direction::Request => validate_struct_terminal(key, "request key")?,
+            Direction::Response => validate_json_terminal(key, "response key")?,
+        }
     }
     validate_charset(key)?;
     validate_backticks(key)?;
@@ -73,9 +77,17 @@ pub(super) fn validate_terminal(s: &str, direction: &Direction) -> Result<(), Er
     Ok(())
 }
 
-/// Validate a single constant entry value — any valid JSON is accepted.
-pub(super) fn validate_constant(_val: &serde_json::Value) -> Result<(), Error> {
-    Ok(())
+/// Validate a single constant entry value — only scalars allowed.
+pub(super) fn validate_constant(val: &serde_json::Value) -> Result<(), Error> {
+    match val {
+        serde_json::Value::String(_)
+        | serde_json::Value::Number(_)
+        | serde_json::Value::Bool(_)
+        | serde_json::Value::Null => Ok(()),
+        _ => Err(Error::Suture(
+            "constant value must be a scalar (string, number, boolean, or null)".into(),
+        )),
+    }
 }
 
 // ===========================================================================
@@ -86,6 +98,16 @@ fn validate_json_terminal(s: &str, ctx: &str) -> Result<(), Error> {
     if !s.starts_with('/') {
         return Err(Error::Suture(format!(
             "{ctx} must start with '/', got: '{s}'"
+        )));
+    }
+    if s.len() > 1 && s.ends_with('/') {
+        return Err(Error::Suture(format!(
+            "{ctx} must not end with '/', got: '{s}'"
+        )));
+    }
+    if s.contains("//") {
+        return Err(Error::Suture(format!(
+            "{ctx} must not contain consecutive '/', got: '{s}'"
         )));
     }
     Ok(())
@@ -119,20 +141,6 @@ fn validate_struct_terminal(s: &str, ctx: &str) -> Result<(), Error> {
 // ===========================================================================
 
 fn validate_charset(s: &str) -> Result<(), Error> {
-    for (i, c) in s.char_indices() {
-        // Characters inside backtick-delimited regex are exempt — regex has
-        // its own character rules.
-        if c == '`' {
-            break; // backtick validation handles the rest
-        }
-        if !is_terminal_char(c) {
-            return Err(Error::Suture(format!(
-                "invalid character '{c}' at position {i} in terminal: '{s}'"
-            )));
-        }
-    }
-
-    // Validate chars outside backticks only.
     let mut in_backtick = false;
     for (i, c) in s.char_indices() {
         if c == '`' {
@@ -303,6 +311,12 @@ fn validate_brackets(s: &str) -> Result<(), Error> {
             i += 1; // skip ']'
 
             validate_bracket_inner(inner, s)?;
+            // Reject consecutive brackets (e.g., items[:][0]).
+            if i < bytes.len() && bytes[i] == b'[' {
+                return Err(Error::Suture(format!(
+                    "consecutive brackets not allowed in terminal: '{s}'"
+                )));
+            }
             continue;
         }
 
@@ -340,7 +354,12 @@ fn validate_bracket_inner(inner: &str, full: &str) -> Result<(), Error> {
     match parts.len() {
         // [N] — single index.
         1 => {
-            validate_int_part(parts[0], full, "index")?;
+            let idx = validate_int_part(parts[0], full, "index")?;
+            if idx == i64::MAX {
+                return Err(Error::Suture(format!(
+                    "index too large in bracket expression '[{inner}]' in terminal: '{full}'"
+                )));
+            }
         }
         // [start:end] — slice.
         2 => {

@@ -22,5 +22,11 @@ pub fn parse(input: &str) -> Result<Vec<Result<Suture, Error>>, Error> {
 /// Compile a sutures manifest from a JSON value.
 pub fn load(input: Value) -> Result<Vec<Result<Suture, Error>>, Error> {
     let schema: SutureSchema = serde_json::from_value(input).map_err(Error::Parse)?;
+    if schema.name.is_empty() {
+        return Err(Error::Suture("root name must not be empty".into()));
+    }
+    if schema.suture_sets.is_empty() {
+        return Err(Error::Suture("suture_sets must not be empty".into()));
+    }
     Ok(schema.suture_sets.into_iter().map(compile).collect())
 }
