@@ -43,10 +43,7 @@ impl Stitch for Suture {
         Ok(dst)
     }
 
-    fn unstitch<T: Seam + serde::de::DeserializeOwned>(
-        &self,
-        input: &Value,
-    ) -> Result<T, Error> {
+    fn unstitch<T: Seam + serde::de::DeserializeOwned>(&self, input: &Value) -> Result<T, Error> {
         let mut dst = Value::Object(Map::new());
 
         match &self.binding {
@@ -57,12 +54,10 @@ impl Stitch for Suture {
             }
             Bindings::Response(root) => {
                 // Forward: walk JSON (trie), extract values, place at struct targets.
-                emit_root_targets(root, input, &mut dst, &[], '.')
-                    .map_err(stitch_to_unstitch)?;
+                emit_root_targets(root, input, &mut dst, &[], '.').map_err(stitch_to_unstitch)?;
                 forward_walk(root, input, &mut dst, &mut Vec::new(), '.')
                     .map_err(stitch_to_unstitch)?;
-                inject_constants(&mut dst, &self.constants, '.')
-                    .map_err(stitch_to_unstitch)?;
+                inject_constants(&mut dst, &self.constants, '.').map_err(stitch_to_unstitch)?;
             }
         }
 
@@ -131,8 +126,9 @@ fn forward_walk(
                 };
                 // Push the *enumeration* index (0, 1, 2…) so the write side
                 // always produces a dense array, regardless of source slice.
-                for (enum_idx, src_idx) in
-                    slice_indices(arr.len(), *start, *end, *step).into_iter().enumerate()
+                for (enum_idx, src_idx) in slice_indices(arr.len(), *start, *end, *step)
+                    .into_iter()
+                    .enumerate()
                 {
                     let elem = &arr[src_idx];
                     indices.push(enum_idx);
@@ -158,8 +154,9 @@ fn forward_walk(
                 };
                 let re = compile_regex(pattern)?;
                 let matching: Vec<_> = obj.iter().filter(|(k, _)| re.is_match(k)).collect();
-                for (enum_idx, src_idx) in
-                    slice_indices(matching.len(), *start, *end, *step).into_iter().enumerate()
+                for (enum_idx, src_idx) in slice_indices(matching.len(), *start, *end, *step)
+                    .into_iter()
+                    .enumerate()
                 {
                     let (_, val) = &matching[src_idx];
                     indices.push(enum_idx);
@@ -266,8 +263,9 @@ fn extract_values(
         }
         TargetSegment::Slice { start, end, step } => {
             if let Some(arr) = src.as_array() {
-                for (enum_idx, src_idx) in
-                    slice_indices(arr.len(), *start, *end, *step).into_iter().enumerate()
+                for (enum_idx, src_idx) in slice_indices(arr.len(), *start, *end, *step)
+                    .into_iter()
+                    .enumerate()
                 {
                     indices.push(enum_idx);
                     extract_values(&arr[src_idx], segments, seg_idx + 1, indices, results);
@@ -340,9 +338,10 @@ fn trie_write_index(
         }
     }
     // Full or range iteration: consume from read-side indices.
-    let idx = indices.get(*iter_pos).copied().ok_or_else(|| {
-        Error::Stitch("iteration index mismatch in reverse walk".into())
-    })?;
+    let idx = indices
+        .get(*iter_pos)
+        .copied()
+        .ok_or_else(|| Error::Stitch("iteration index mismatch in reverse walk".into()))?;
     *iter_pos += 1;
     Ok(idx)
 }
@@ -412,9 +411,8 @@ fn parse_target_segments<'a>(path: &'a str, sep: char) -> Vec<TargetSegment<'a>>
 fn push_bracket_segment<'a>(segments: &mut Vec<TargetSegment<'a>>, inner: &str) {
     if inner.contains(':') {
         let parts: Vec<&str> = inner.split(':').collect();
-        let parse_opt = |s: &str| -> Option<i64> {
-            if s.is_empty() { None } else { s.parse().ok() }
-        };
+        let parse_opt =
+            |s: &str| -> Option<i64> { if s.is_empty() { None } else { s.parse().ok() } };
         let start = parts.first().and_then(|s| parse_opt(s));
         let end = parts.get(1).and_then(|s| parse_opt(s));
         let step = parts.get(2).and_then(|s| parse_opt(s));
@@ -547,9 +545,7 @@ fn slice_indices(
         }
     }
 
-    let resolve = |val: i64| -> i64 {
-        if val < 0 { val + len_i } else { val }
-    };
+    let resolve = |val: i64| -> i64 { if val < 0 { val + len_i } else { val } };
 
     let mut result = Vec::new();
 
@@ -595,6 +591,5 @@ fn ensure_array_len(val: &mut Value, min_len: usize) {
 }
 
 fn compile_regex(pattern: &str) -> Result<Regex, Error> {
-    Regex::new(&format!("^{pattern}$"))
-        .map_err(|e| Error::Stitch(format!("invalid regex: {e}")))
+    Regex::new(&format!("^{pattern}$")).map_err(|e| Error::Stitch(format!("invalid regex: {e}")))
 }
