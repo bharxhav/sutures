@@ -1,7 +1,10 @@
 [package]
 name = "sutures-comptime"
-version = "0.0.1"
+version = "1.0.0"
 edition = "2024"
+description = "Compile-time proc macros for sutures"
+license = "Apache-2.0"
+repository = "https://github.com/bharxhav/sutures"
 
 [lib]
 proc-macro = true
