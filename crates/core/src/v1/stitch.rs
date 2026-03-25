@@ -332,10 +332,11 @@ fn trie_write_index(
     iter_pos: &mut usize,
 ) -> Result<usize, Error> {
     // Single fixed index: Iterate { start: N, end: N+1, step: 1 }.
-    if let (Some(s), Some(e)) = (start, end) {
-        if *e == *s + 1 && *s >= 0 {
-            return Ok(*s as usize);
-        }
+    if let (Some(s), Some(e)) = (start, end)
+        && *e == *s + 1
+        && *s >= 0
+    {
+        return Ok(*s as usize);
     }
     // Full or range iteration: consume from read-side indices.
     let idx = indices
@@ -532,17 +533,16 @@ fn slice_indices(
 
     // Special case: single index [N] — compiled as (N, N+1, 1).
     // Handles negative indices correctly (e.g. [-1] → last element).
-    if step == 1 {
-        if let (Some(s), Some(e)) = (start, end) {
-            if e == s + 1 {
-                let resolved = if s < 0 { s + len_i } else { s };
-                return if resolved >= 0 && resolved < len_i {
-                    vec![resolved as usize]
-                } else {
-                    vec![]
-                };
-            }
-        }
+    if step == 1
+        && let (Some(s), Some(e)) = (start, end)
+        && e == s + 1
+    {
+        let resolved = if s < 0 { s + len_i } else { s };
+        return if resolved >= 0 && resolved < len_i {
+            vec![resolved as usize]
+        } else {
+            vec![]
+        };
     }
 
     let resolve = |val: i64| -> i64 { if val < 0 { val + len_i } else { val } };

@@ -58,6 +58,7 @@ pub enum Direction {
 /// Schema pattern: `^/[A-Za-z0-9_$.\[\]:?/\`^()\-+\\*|]*$`
 ///
 /// Examples: `/model`, `/choices/0/message/content`, `/data[:]`
+#[allow(dead_code)]
 pub(crate) type JsonTerminal = String;
 
 // ---- $defs/struct_terminal ------------------------------------------------
@@ -67,6 +68,7 @@ pub(crate) type JsonTerminal = String;
 /// Schema pattern: `^[A-Za-z][A-Za-z0-9_$.\[\]:?/\`^()\-+\\*|]*$`
 ///
 /// Examples: `model`, `messages[:]`, `ChatResponse.content`
+#[allow(dead_code)]
 pub(crate) type StructTerminal = String;
 
 // ---- $defs/request_suture & $defs/response_suture -------------------------
@@ -85,6 +87,7 @@ pub(crate) type StructTerminal = String;
 ///
 /// Schema `propertyNames`: `"_"` | terminal (direction-dependent).
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct RawSuture {
     pub mappings: Vec<RawMapping>,
     pub constants: Vec<RawConstantEntry>,
@@ -94,6 +97,7 @@ pub(crate) struct RawSuture {
 ///
 /// Schema `additionalProperties.oneOf` determines the value shape.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct RawMapping {
     /// The left-hand side: struct_terminal (request) or json_terminal (response).
     pub key: String,
@@ -108,6 +112,7 @@ pub(crate) struct RawMapping {
 ///   - an array of terminal strings (fan-out, minItems: 1)
 ///   - a nested suture object (recursion)
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) enum RawMappingValue {
     /// Single terminal path.
     Terminal(String),
@@ -127,6 +132,7 @@ pub(crate) enum RawMappingValue {
 /// For request: key is `json_terminal`, value is injected into the JSON output.
 /// For response: key is `struct_terminal`, value is injected into the struct.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct RawConstantEntry {
     pub terminal: String,
     pub value: serde_json::Value,
