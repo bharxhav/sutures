@@ -7,7 +7,7 @@ use std::borrow::Cow;
 /// All string fields use `Cow<'static, str>`:
 /// - **Compile-time** (`sutures_comptime`): `Cow::Borrowed(&'static str)`: zero allocation.
 /// - **Runtime** (`sutures`): `Cow::Owned(String)`: standard heap allocation.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Suture {
     pub(crate) id: Option<Cow<'static, str>>,
     pub(crate) name: Cow<'static, str>,
@@ -39,7 +39,7 @@ pub enum ConstantValue {
 ///
 /// - **Request**: trie follows struct-side paths, targets are JSON-side.
 /// - **Response**: trie follows JSON-side paths, targets are struct-side.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Bindings {
     /// struct → JSON (serialization path).
     ///
@@ -61,7 +61,7 @@ pub enum Bindings {
 ///
 /// A single-index `[N]` is compiled as `Iterate { start: N, end: N+1, step: 1 }`
 /// — a length-1 slice. The runtime treats it identically to a slice.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TrieNode {
     pub(crate) key: Cow<'static, str>,
     pub(crate) binding: BindingTaskType,
@@ -69,7 +69,7 @@ pub struct TrieNode {
     pub(crate) children: Vec<TrieNode>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BindingTaskType {
     /// Direct key lookup — serde on this field.
     Direct,

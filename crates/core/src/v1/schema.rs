@@ -44,7 +44,7 @@ pub(crate) struct RawSutureSet {
 }
 
 /// Capture direction — `"request"` | `"response"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Direction {
     Request,
