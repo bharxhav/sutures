@@ -3,6 +3,6 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.dependencies]
-sutures-derive = { path = "crates/derive", version = "1.0.1" }
-sutures = { path = "crates/core", version = "1.0.1" }
-sutures-comptime = { path = "crates/comptime", version = "1.0.1" }
+sutures-derive = { path = "crates/derive", version = "1.0.0" }
+sutures = { path = "crates/core", version = "1.0.0" }
+sutures-comptime = { path = "crates/comptime", version = "1.0.0" }

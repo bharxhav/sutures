@@ -1,0 +1,21 @@
+[workspace]
+git_tag_name = "v{{ version }}"
+changelog_update = false
+
+[[package]]
+name = "sutures"
+version_group = "sutures"
+git_tag_enable = true
+git_release_enable = true
+git_release_latest = true
+changelog_update = true
+changelog_path = "CHANGELOG.md"
+changelog_include = ["sutures-derive", "sutures-comptime"]
+
+[[package]]
+name = "sutures-derive"
+version_group = "sutures"
+
+[[package]]
+name = "sutures-comptime"
+version_group = "sutures"
