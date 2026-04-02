@@ -1,6 +1,6 @@
 [package]
 name = "sutures-comptime"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 description = "Compile-time proc macros for sutures"
 license = "Apache-2.0"
