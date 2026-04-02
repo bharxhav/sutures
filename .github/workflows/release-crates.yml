@@ -12,34 +12,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
-    name: Release
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    concurrency:
-      group: release-crates-${{ github.ref }}
-      cancel-in-progress: false
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Cargo artifacts
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run release-plz
-        uses: release-plz/action@v0.5
-        with:
-          command: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_API_SK }}
-
+  # Always runs: creates/updates a PR with version bumps.
+  # Does NOT publish anything.
   release-pr:
     name: Release PR
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
@@ -57,10 +31,43 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run release-plz
+      - name: Run release-plz release-pr
         uses: release-plz/action@v0.5
         with:
           command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_API_SK }}
+
+  # Only runs when the trigger commit is a release-plz version bump.
+  # Publishes crates whose Cargo.toml version > crates.io version.
+  release:
+    name: Release
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.conclusion == 'success'
+       && contains(github.event.workflow_run.head_commit.message, 'chore: release'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: release-crates-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run release-plz release
+        uses: release-plz/action@v0.5
+        with:
+          command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_API_SK }}
